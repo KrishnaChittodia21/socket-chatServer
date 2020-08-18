@@ -6,7 +6,24 @@ var models = require('./server.js').models;
 const ws = new WebSocket.Server({port: 8080});
 const clients = [];
 
+const printClientCount = () => {
+  console.log('Clients', clients.length);
+};
+
+setInterval(printClientCount, 1000);
+
 ws.on('connection', (ws) => {
+  function getInitialThreads(userId) {
+    models.Thread.find({where: {}}, (err, threads) => {
+      if (!err && threads) {
+        ws.send(JSON.stringify({
+          type: 'INITIAL_THREADS',
+          data: threads,
+        }));
+      }
+    });
+  }
+
   function login(email, pass) {
     models.User.login({email: email, password: pass}, (err, res) => {
       if (err) {
@@ -22,12 +39,14 @@ ws.on('connection', (ws) => {
               error: err2,
             }));
           } else {
+            ws.uid = user.id + new Date().getTime().toString();
             const userObj = {
               id: user.id,
               email: user.email,
               ws: ws,
             };
             clients.push(userObj);
+            getInitialThreads(user.id);
             ws.send(JSON.stringify({
               type: 'LOGGEDIN',
               data: {
@@ -40,6 +59,18 @@ ws.on('connection', (ws) => {
       }
     });
   }
+
+  ws.on('close', (req) => {
+    let clientIndex = -1;
+    clients.map((c, i) => {
+      if (c.ws._closeCode === req) {
+        clientIndex = i;
+      }
+    });
+    if (clientIndex > -1) {
+      clients.splice(clientIndex, 1);
+    }
+  });
 
   ws.on('message', (message) => {
     console.log('Got message', JSON.parse(message));
@@ -61,6 +92,25 @@ ws.on('connection', (ws) => {
               }, (profileErr, profile) => {
 
               });
+            }
+          });
+          break;
+        case 'CONNECT_WITH_TOKEN':
+          models.User.findById(parsed.data.userId, (err2, user) => {
+            if (!err2 && user) {
+              ws.uid = user.id + new Date().getTime().toString();
+              const userObject = {
+                id: user.id,
+                email: user.email,
+                ws: ws,
+              };
+              const userObj = {
+                id: user.id,
+                email: user.email,
+                ws: ws,
+              };
+              clients.push(userObj);
+              getInitialThreads(user.id);
             }
           });
           break;
@@ -110,7 +160,7 @@ ws.on('connection', (ws) => {
           });
           break;
         case 'THREAD_LOAD':
-          
+
         default:
           console.log('Nothing to see here...');
       }
