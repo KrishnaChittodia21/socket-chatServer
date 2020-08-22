@@ -175,7 +175,7 @@ ws.on('connection', (ws) => {
             if (!err2 && thread) {
               models.Message.upsert(parsed.message, (err3, message) => {
                 if (!err3 && message) {
-                  clients.filter(client => thread.users.indexOf(client.id) > -1).map(client => {
+                  clients.filter(client => thread.users.indexOf(client.id.toString()) > -1).map(client => {
                     client.ws.send(JSON.stringify({
                       type: 'ADD_MESSAGE_TO_THREAD',
                       threadId: parsed.threadId,
