@@ -8,9 +8,10 @@ const clients = [];
 
 ws.on('connection', (ws) => {
   function getInitialThreads(userId) {
+    let i = 0;
     models.Thread.find({where: {}, include: 'Messages'}, (err, threads) => {
       if (!err && threads) {
-        threads.map((thread, i) => {
+        threads.map((thread) => {
           models.User.find({where: {id: {inq: thread.users}}}, (err3, users) => {
             thread.profiles = users;
             if (i === threads.length - 1) {
@@ -19,6 +20,7 @@ ws.on('connection', (ws) => {
                 data: threads,
               }));
             }
+            i = i + 1;
           });
         });
       }
