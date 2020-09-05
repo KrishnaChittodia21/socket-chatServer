@@ -74,7 +74,6 @@ ws.on('connection', (ws) => {
   });
 
   ws.on('message', (message) => {
-    console.log('Got message', JSON.parse(message));
     let parsed = JSON.parse(message);
     if (parsed) {
       switch (parsed.type) {
