@@ -17,6 +17,9 @@
     },
     "userId": {
       "type": "string"
+    },
+    "username": {
+      "type": "string"
     }
   },
   "validations": [],
